@@ -7,10 +7,514 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a0a12; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  #app { width: 100%; max-width: 900px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .splash { background: #6B1230; border-radius: 16px; padding: 4rem 2rem; text-align: center; }
+  .splash-eyebrow { font-size: 12px; color: #E8A020; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .splash-h { font-size: 42px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 0.5rem; }
+  .splash-sub { font-size: 16px; color: #C4909F; margin-bottom: 2.5rem; }
+  .splash-stats { display: flex; justify-content: center; gap: 3rem; margin-bottom: 3rem; }
+  .stat span { display: block; font-size: 36px; font-weight: 700; color: #E8A020; }
+  .stat small { font-size: 13px; color: #C4909F; }
+  .start-btn { background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1.1rem 4rem; font-size: 18px; font-weight: 700; cursor: pointer; }
+  .logo-tag { margin-top: 2.5rem; font-size: 12px; color: #7A3050; letter-spacing: 2px; text-transform: uppercase; }
+  .quiz-top { background: #6B1230; border-radius: 16px; padding: 1.25rem 1.75rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .qt-eyebrow { font-size: 11px; color: #C4909F; letter-spacing: 3px; text-transform: uppercase; }
+  .qt-num { font-size: 24px; font-weight: 700; color: #fff; }
+  .qt-score { background: #E8A020; color: #4A0D21; border-radius: 30px; padding: 8px 22px; font-size: 15px; font-weight: 700; }
+  .timer-wrap { position: relative; width: 90px; height: 90px; }
+  .timer-svg { transform: rotate(-90deg); }
+  .t-bg { fill: none; stroke: #4A0D21; stroke-width: 7; }
+  .t-arc { fill: none; stroke: #E8A020; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+  .t-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 28px; font-weight: 700; color: #fff; }
+  .t-num.urgent { color: #FF6B6B; }
+  .prog-wrap { background: #4A0D21; border-radius: 8px; height: 6px; margin-bottom: 1rem; overflow: hidden; }
+  .prog-fill { height: 6px; background: #E8A020; border-radius: 8px; transition: width 0.5s ease; }
+  .q-card { background: #fff; border-radius: 16px; padding: 2rem; margin-bottom: 1rem; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center; }
+  .q-text { font-size: 22px; font-weight: 600; color: #1a0a12; line-height: 1.5; }
+  .instruction { text-align: center; font-size: 14px; color: #E8A020; margin-bottom: 0.75rem; font-weight: 600; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+  .opt { border-radius: 12px; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 14px; cursor: pointer; border: 3px solid transparent; background: #2D0F1E; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+  .opt:hover { background: #3D1528; border-color: #E8A020; }
+  .opt.selected { border-color: #E8A020; background: #5A1535; }
+  .opt.selected .opt-letter { background: #E8A020; color: #4A0D21; }
+  .opt.disabled { cursor: default; pointer-events: none; }
+  .opt.correct { background: #1A4A1A; border-color: #4CAF50; }
+  .opt.correct .opt-letter { background: #2E7D32; }
+  .opt.wrong { background: #4A1A1A; border-color: #E53935; }
+  .opt.wrong .opt-letter { background: #C62828; }
+  .opt.reveal { background: #1A4A1A; border-color: #4CAF50; }
+  .opt.reveal .opt-letter { background: #2E7D32; }
+  .opt-letter { width: 42px; height: 42px; border-radius: 50%; background: #6B1230; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0; transition: all 0.2s; }
+  .opt-text { font-size: 16px; color: #fff; line-height: 1.4; }
+  /* BOUTON VALIDER — bien visible */
+  .valider-btn { background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1.1rem; font-size: 18px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 1rem; display: none; }
+  .valider-btn.show { display: block; }
+  .tip { background: #2D0F1E; border-left: 4px solid #E8A020; border-radius: 0 12px 12px 0; padding: 1rem 1.25rem; font-size: 14px; color: #C4909F; margin-bottom: 1rem; display: none; line-height: 1.6; }
+  .tip.show { display: block; }
+  .streak { text-align: center; font-size: 14px; color: #E8A020; font-weight: 600; min-height: 22px; margin-bottom: 0.5rem; }
+  .next-btn { background: #6B1230; color: #fff; border: none; border-radius: 12px; padding: 1rem; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; display: none; }
+  .next-btn.show { display: block; }
+  .result { background: #6B1230; border-radius: 16px; padding: 3rem 2rem; text-align: center; }
+  .r-medal { font-size: 72px; margin-bottom: 0.5rem; }
+  .r-score { font-size: 56px; font-weight: 700; color: #E8A020; }
+  .r-total { font-size: 22px; color: #C4909F; margin-bottom: 0.25rem; }
+  .r-title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+  .r-sub { font-size: 15px; color: #C4909F; margin-bottom: 2rem; }
+  .replay-btn { background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1.1rem 3rem; font-size: 17px; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="screen active" id="s-splash">
+    <div class="splash">
+      <div class="splash-eyebrow">HGGSP • Thème 2 — Le Lycée Visio</div>
+      <div class="splash-h">Quiz<br>Empire ottoman</div>
+      <div class="splash-sub">Sélectionnez une réponse puis validez !</div>
+      <div class="splash-stats">
+        <div class="stat"><span>8</span><small>questions</small></div>
+        <div class="stat"><span>20s</span><small>par question</small></div>
+        <div class="stat"><span>4</span><small>réponses</small></div>
+      </div>
+      <button class="start-btn" onclick="startQuiz()">Lancer le quiz ▶</button>
+      <div class="logo-tag">Le Lycée Visio • L'excellence scolaire de chez vous</div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-quiz">
+    <div class="quiz-top">
+      <div>
+        <div class="qt-eyebrow">Question</div>
+        <div class="qt-num" id="qt-num">1 / 8</div>
+      </div>
+      <div class="timer-wrap">
+        <svg class="timer-svg" width="90" height="90" viewBox="0 0 90 90">
+          <circle class="t-bg" cx="45" cy="45" r="36"/>
+          <circle class="t-arc" id="t-arc" cx="45" cy="45" r="36"/>
+        </svg>
+        <div class="t-num" id="t-num">20</div>
+      </div>
+      <div class="qt-score" id="qt-score">0 / 8</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    <div class="streak" id="streak"></div>
+    <div class="q-card"><div class="q-text" id="q-text"></div></div>
+    <p class="instruction">👆 Étape 1 : cliquez sur une réponse &nbsp;→&nbsp; Étape 2 : cliquez sur Valider</p>
+    <div class="opts" id="opts"></div>
+    <button class="valider-btn" id="valider-btn" onclick="validerReponse()">✅ Valider ma réponse</button>
+    <div class="tip" id="tip"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQ()">Question suivante →</button>
+  </div>
+
+  <div class="screen" id="s-result">
+    <div class="result">
+      <div class="r-medal" id="r-medal"></div>
+      <div class="r-score" id="r-score"></div>
+      <div class="r-total">bonnes réponses</div>
+      <div class="r-title" id="r-title"></div>
+      <div class="r-sub" id="r-sub"></div>
+      <button class="replay-btn" onclick="restart()">↺ Recommencer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const QS=[
+  {q:"Qui est à l'origine de la dynasty ottomane ?",opts:["Orhan","Osman Ier","Mehmet II","Soliman le Magnifique"],ans:1,tip:"<strong>Osman Ier</strong> est le fondateur éponyme de la dynasty ottomane au XIVe siècle."},
+  {q:"Quel événement de 1453 marque la fin de l'Empire romain d'Orient ?",opts:["La bataille de Lépante","La chute de Constantinople","Le traité de Carlowitz","Le siège de Vienne"],ans:1,tip:"<strong>Mehmet II</strong> conquiert Constantinople en 1453 — transformée en Istanbul."},
+  {q:"Sous quel sultan l'Empire atteint-il son apogée au XVIe siècle ?",opts:["Abdul Hamid II","Soliman le Magnifique","Selim Ier","Osman II"],ans:1,tip:"<strong>Soliman le Magnifique</strong> règne 46 ans (1520–1566) : conquêtes et réformes."},
+  {q:"Qui étaient les janissaires dans l'organisation militaire ottomane ?",opts:["Des mercenaires européens","La marine impériale","Un corps d'élite de chrétiens convertis","Une cavalerie de nomades"],ans:2,tip:"Recrutés par le système du <strong>devchirmé</strong>, garde d'élite fidèle du souverain."},
+  {q:"Quelle défaite navale de 1571 brise le mythe de l'invincibilité ottomane ?",opts:["La bataille de Preveza","La bataille de Lépante","Le siège de Malte","La bataille de Navarin"],ans:1,tip:"<strong>La bataille de Lépante</strong> (1571) : défaite symbolique majeure face à une coalition chrétienne."},
+  {q:"Quel traité de 1699 marque le début du recul territorial ottoman en Europe ?",opts:["Le traité de Versailles","Le traité de Carlowitz","La paix d'Amiens","Le traité de Lausanne"],ans:1,tip:"Le <strong>traité de Carlowitz</strong> force l'Empire à céder de vastes territoires aux Habsbourg."},
+  {q:"Comment s'appelle la période de grandes réformes lancée en 1839 ?",opts:["L'ère des Tanzimat","La Révolution des Jeunes-Turcs","La Renaissance ottomane","Le Printemps des peuples"],ans:0,tip:"Les <strong>Tanzimat</strong> modernisent l'armée, la justice et la fiscalité sur le modèle européen."},
+  {q:"Qui fonde la Turquie moderne après la disparition de l'Empire en 1922 ?",opts:["Mustafa Kemal (Atatürk)","Osman III","Ismet Inönü","Enver Pacha"],ans:0,tip:"<strong>Mustafa Kemal Atatürk</strong> mène la guerre d'indépendance et abolit le sultanat en 1922."}
+];
+const CIRC=2*Math.PI*36;
+let cur=0,score=0,streak=0,timer=null,timeLeft=20,answered=false,selected=-1;
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function startQuiz(){cur=0;score=0;streak=0;show('s-quiz');loadQ();}
+
+function loadQ(){
+  answered=false;selected=-1;
+  const q=QS[cur];
+  document.getElementById('qt-num').textContent=(cur+1)+' / '+QS.length;
+  document.getElementById('qt-score').textContent=score+' / '+QS.length;
+  document.getElementById('prog').style.width=(cur/QS.length*100)+'%';
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('tip').className='tip';
+  document.getElementById('next-btn').className='next-btn';
+  document.getElementById('valider-btn').className='valider-btn';
+  document.getElementById('streak').textContent='';
+  const letters=['A','B','C','D'];
+  const opts=document.getElementById('opts');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='opt';
+    d.id='opt-'+i;
+    d.innerHTML='<div class="opt-letter">'+letters[i]+'</div><div class="opt-text">'+o+'</div>';
+    d.onclick=function(){selectOpt(i);};
+    opts.appendChild(d);
+  });
+  startTimer();
+}
+
+function selectOpt(idx){
+  if(answered)return;
+  selected=idx;
+  // Reset toutes les options
+  document.querySelectorAll('.opt').forEach(o=>o.className='opt');
+  // Marquer la sélectionnée
+  document.getElementById('opt-'+idx).className='opt selected';
+  // Afficher le bouton valider
+  document.getElementById('valider-btn').className='valider-btn show';
+}
+
+function validerReponse(){
+  if(answered||selected===-1)return;
+  answered=true;
+  clearInterval(timer);
+  const q=QS[cur];
+  document.querySelectorAll('.opt').forEach(o=>{o.className=o.className.replace('selected','');o.classList.add('disabled');o.onclick=null;});
+  const tip=document.getElementById('tip');
+  document.getElementById('valider-btn').className='valider-btn';
+  if(selected===q.ans){
+    document.getElementById('opt-'+selected).className='opt correct disabled';
+    score++;streak++;
+    document.getElementById('qt-score').textContent=score+' / '+QS.length;
+    document.getElementById('streak').textContent=streak>=3?'🔥 Série de '+streak+' !':streak>=2?'⚡ '+streak+' bonnes réponses !':'';
+    tip.innerHTML='✅ <strong>Bonne réponse !</strong> '+q.tip;
+    tip.style.borderLeftColor='#4CAF50';tip.style.color='#90EE90';
+  }else{
+    document.getElementById('opt-'+selected).className='opt wrong disabled';
+    document.getElementById('opt-'+q.ans).className='opt reveal disabled';
+    streak=0;
+    tip.innerHTML='❌ <strong>Mauvaise réponse.</strong> '+q.tip;
+    tip.style.borderLeftColor='#E53935';tip.style.color='#FFB3B3';
+  }
+  tip.className='tip show';
+  document.getElementById('next-btn').className='next-btn show';
+}
+
+function startTimer(){
+  clearInterval(timer);
+  timeLeft=20;
+  const arc=document.getElementById('t-arc');
+  const num=document.getElementById('t-num');
+  arc.style.stroke='#E8A020';
+  arc.style.strokeDashoffset='0';
+  num.className='t-num';
+  num.textContent='20';
+  timer=setInterval(()=>{
+    timeLeft--;
+    num.textContent=timeLeft;
+    arc.style.strokeDashoffset=CIRC*(1-timeLeft/20);
+    if(timeLeft<=5){arc.style.stroke='#FF6B6B';num.className='t-num urgent';}
+    if(timeLeft<=0){clearInterval(timer);if(!answered)timeOut();}
+  },1000);
+}
+
+function timeOut(){
+  answered=true;
+  const q=QS[cur];
+  document.querySelectorAll('.opt').forEach(o=>{o.classList.add('disabled');o.onclick=null;});
+  document.getElementById('opt-'+q.ans).className='opt reveal disabled';
+  document.getElementById('valider-btn').className='valider-btn';
+  streak=0;
+  const tip=document.getElementById('tip');
+  tip.innerHTML='⏰ <strong>Temps écoulé !</strong> '+q.tip;
+  tip.style.borderLeftColor='#E8A020';tip.style.color='#C4909F';
+  tip.className='tip show';
+  document.getElementById('next-btn').className='next-btn show';
+}
+
+function nextQ(){cur++;if(cur<QS.length){loadQ();}else{showResult();}}
+
+function showResult(){
+  show('s-result');
+  let medal,title,sub;
+  if(score===8){medal='🏆';title='Score parfait !';sub='Vous maîtrisez parfaitement l\'Empire ottoman !';}
+  else if(score>=6){medal='🥇';title='Excellent !';sub='Très bonne maîtrise du cours.';}
+  else if(score>=4){medal='🥈';title='Bien !';sub='Quelques points à revoir.';}
+  else{medal='📚';title='À revoir !';sub='Relire le cours et recommencer.';}
+  document.getElementById('r-medal').textContent=medal;
+  document.getElementById('r-score').textContent=score+' / '+QS.length;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){cur=0;score=0;streak=0;selected=-1;show('s-splash');}
+</script>
+</body>
+</html>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz – Empire ottoman | Le Lycée Visio</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a0a12; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
   #app { width: 100%; max-width: 860px; }
 
   .screen { display: none; }
   .screen.active { display: block; }
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz – Empire ottoman | Le Lycée Visio</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a0a12; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  #app { width: 100%; max-width: 900px; }
+  .screen { display: none; }
+  .screen.active { display: block; }
+  .splash { background: #6B1230; border-radius: 16px; padding: 4rem 2rem; text-align: center; }
+  .splash-eyebrow { font-size: 12px; color: #E8A020; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .splash-h { font-size: 42px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 0.5rem; }
+  .splash-sub { font-size: 16px; color: #C4909F; margin-bottom: 2.5rem; }
+  .splash-stats { display: flex; justify-content: center; gap: 3rem; margin-bottom: 3rem; }
+  .stat span { display: block; font-size: 36px; font-weight: 700; color: #E8A020; }
+  .stat small { font-size: 13px; color: #C4909F; }
+  .start-btn { background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1.1rem 4rem; font-size: 18px; font-weight: 700; cursor: pointer; }
+  .logo-tag { margin-top: 2.5rem; font-size: 12px; color: #7A3050; letter-spacing: 2px; text-transform: uppercase; }
+  .quiz-top { background: #6B1230; border-radius: 16px; padding: 1.25rem 1.75rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .qt-eyebrow { font-size: 11px; color: #C4909F; letter-spacing: 3px; text-transform: uppercase; }
+  .qt-num { font-size: 24px; font-weight: 700; color: #fff; }
+  .qt-score { background: #E8A020; color: #4A0D21; border-radius: 30px; padding: 8px 22px; font-size: 15px; font-weight: 700; }
+  .timer-wrap { position: relative; width: 90px; height: 90px; }
+  .timer-svg { transform: rotate(-90deg); }
+  .t-bg { fill: none; stroke: #4A0D21; stroke-width: 7; }
+  .t-arc { fill: none; stroke: #E8A020; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+  .t-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 28px; font-weight: 700; color: #fff; }
+  .t-num.urgent { color: #FF6B6B; }
+  .prog-wrap { background: #4A0D21; border-radius: 8px; height: 6px; margin-bottom: 1rem; overflow: hidden; }
+  .prog-fill { height: 6px; background: #E8A020; border-radius: 8px; transition: width 0.5s ease; }
+  .q-card { background: #fff; border-radius: 16px; padding: 2rem; margin-bottom: 1rem; text-align: center; min-height: 100px; display: flex; align-items: center; justify-content: center; }
+  .q-text { font-size: 22px; font-weight: 600; color: #1a0a12; line-height: 1.5; }
+  .instruction { text-align: center; font-size: 14px; color: #E8A020; margin-bottom: 0.75rem; font-weight: 600; }
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+  .opt { border-radius: 12px; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 14px; cursor: pointer; border: 3px solid transparent; background: #2D0F1E; transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+  .opt:hover { background: #3D1528; border-color: #E8A020; }
+  .opt.selected { border-color: #E8A020; background: #5A1535; }
+  .opt.selected .opt-letter { background: #E8A020; color: #4A0D21; }
+  .opt.disabled { cursor: default; pointer-events: none; }
+  .opt.correct { background: #1A4A1A; border-color: #4CAF50; }
+  .opt.correct .opt-letter { background: #2E7D32; }
+  .opt.wrong { background: #4A1A1A; border-color: #E53935; }
+  .opt.wrong .opt-letter { background: #C62828; }
+  .opt.reveal { background: #1A4A1A; border-color: #4CAF50; }
+  .opt.reveal .opt-letter { background: #2E7D32; }
+  .opt-letter { width: 42px; height: 42px; border-radius: 50%; background: #6B1230; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0; transition: all 0.2s; }
+  .opt-text { font-size: 16px; color: #fff; line-height: 1.4; }
+  /* BOUTON VALIDER — bien visible */
+  .valider-btn { background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1.1rem; font-size: 18px; font-weight: 700; cursor: pointer; width: 100%; margin-bottom: 1rem; display: none; }
+  .valider-btn.show { display: block; }
+  .tip { background: #2D0F1E; border-left: 4px solid #E8A020; border-radius: 0 12px 12px 0; padding: 1rem 1.25rem; font-size: 14px; color: #C4909F; margin-bottom: 1rem; display: none; line-height: 1.6; }
+  .tip.show { display: block; }
+  .streak { text-align: center; font-size: 14px; color: #E8A020; font-weight: 600; min-height: 22px; margin-bottom: 0.5rem; }
+  .next-btn { background: #6B1230; color: #fff; border: none; border-radius: 12px; padding: 1rem; font-size: 16px; font-weight: 700; cursor: pointer; width: 100%; display: none; }
+  .next-btn.show { display: block; }
+  .result { background: #6B1230; border-radius: 16px; padding: 3rem 2rem; text-align: center; }
+  .r-medal { font-size: 72px; margin-bottom: 0.5rem; }
+  .r-score { font-size: 56px; font-weight: 700; color: #E8A020; }
+  .r-total { font-size: 22px; color: #C4909F; margin-bottom: 0.25rem; }
+  .r-title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+  .r-sub { font-size: 15px; color: #C4909F; margin-bottom: 2rem; }
+  .replay-btn { background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1.1rem 3rem; font-size: 17px; font-weight: 700; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="screen active" id="s-splash">
+    <div class="splash">
+      <div class="splash-eyebrow">HGGSP • Thème 2 — Le Lycée Visio</div>
+      <div class="splash-h">Quiz<br>Empire ottoman</div>
+      <div class="splash-sub">Sélectionnez une réponse puis validez !</div>
+      <div class="splash-stats">
+        <div class="stat"><span>8</span><small>questions</small></div>
+        <div class="stat"><span>20s</span><small>par question</small></div>
+        <div class="stat"><span>4</span><small>réponses</small></div>
+      </div>
+      <button class="start-btn" onclick="startQuiz()">Lancer le quiz ▶</button>
+      <div class="logo-tag">Le Lycée Visio • L'excellence scolaire de chez vous</div>
+    </div>
+  </div>
+
+  <div class="screen" id="s-quiz">
+    <div class="quiz-top">
+      <div>
+        <div class="qt-eyebrow">Question</div>
+        <div class="qt-num" id="qt-num">1 / 8</div>
+      </div>
+      <div class="timer-wrap">
+        <svg class="timer-svg" width="90" height="90" viewBox="0 0 90 90">
+          <circle class="t-bg" cx="45" cy="45" r="36"/>
+          <circle class="t-arc" id="t-arc" cx="45" cy="45" r="36"/>
+        </svg>
+        <div class="t-num" id="t-num">20</div>
+      </div>
+      <div class="qt-score" id="qt-score">0 / 8</div>
+    </div>
+    <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    <div class="streak" id="streak"></div>
+    <div class="q-card"><div class="q-text" id="q-text"></div></div>
+    <p class="instruction">👆 Étape 1 : cliquez sur une réponse &nbsp;→&nbsp; Étape 2 : cliquez sur Valider</p>
+    <div class="opts" id="opts"></div>
+    <button class="valider-btn" id="valider-btn" onclick="validerReponse()">✅ Valider ma réponse</button>
+    <div class="tip" id="tip"></div>
+    <button class="next-btn" id="next-btn" onclick="nextQ()">Question suivante →</button>
+  </div>
+
+  <div class="screen" id="s-result">
+    <div class="result">
+      <div class="r-medal" id="r-medal"></div>
+      <div class="r-score" id="r-score"></div>
+      <div class="r-total">bonnes réponses</div>
+      <div class="r-title" id="r-title"></div>
+      <div class="r-sub" id="r-sub"></div>
+      <button class="replay-btn" onclick="restart()">↺ Recommencer</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const QS=[
+  {q:"Qui est à l'origine de la dynasty ottomane ?",opts:["Orhan","Osman Ier","Mehmet II","Soliman le Magnifique"],ans:1,tip:"<strong>Osman Ier</strong> est le fondateur éponyme de la dynasty ottomane au XIVe siècle."},
+  {q:"Quel événement de 1453 marque la fin de l'Empire romain d'Orient ?",opts:["La bataille de Lépante","La chute de Constantinople","Le traité de Carlowitz","Le siège de Vienne"],ans:1,tip:"<strong>Mehmet II</strong> conquiert Constantinople en 1453 — transformée en Istanbul."},
+  {q:"Sous quel sultan l'Empire atteint-il son apogée au XVIe siècle ?",opts:["Abdul Hamid II","Soliman le Magnifique","Selim Ier","Osman II"],ans:1,tip:"<strong>Soliman le Magnifique</strong> règne 46 ans (1520–1566) : conquêtes et réformes."},
+  {q:"Qui étaient les janissaires dans l'organisation militaire ottomane ?",opts:["Des mercenaires européens","La marine impériale","Un corps d'élite de chrétiens convertis","Une cavalerie de nomades"],ans:2,tip:"Recrutés par le système du <strong>devchirmé</strong>, garde d'élite fidèle du souverain."},
+  {q:"Quelle défaite navale de 1571 brise le mythe de l'invincibilité ottomane ?",opts:["La bataille de Preveza","La bataille de Lépante","Le siège de Malte","La bataille de Navarin"],ans:1,tip:"<strong>La bataille de Lépante</strong> (1571) : défaite symbolique majeure face à une coalition chrétienne."},
+  {q:"Quel traité de 1699 marque le début du recul territorial ottoman en Europe ?",opts:["Le traité de Versailles","Le traité de Carlowitz","La paix d'Amiens","Le traité de Lausanne"],ans:1,tip:"Le <strong>traité de Carlowitz</strong> force l'Empire à céder de vastes territoires aux Habsbourg."},
+  {q:"Comment s'appelle la période de grandes réformes lancée en 1839 ?",opts:["L'ère des Tanzimat","La Révolution des Jeunes-Turcs","La Renaissance ottomane","Le Printemps des peuples"],ans:0,tip:"Les <strong>Tanzimat</strong> modernisent l'armée, la justice et la fiscalité sur le modèle européen."},
+  {q:"Qui fonde la Turquie moderne après la disparition de l'Empire en 1922 ?",opts:["Mustafa Kemal (Atatürk)","Osman III","Ismet Inönü","Enver Pacha"],ans:0,tip:"<strong>Mustafa Kemal Atatürk</strong> mène la guerre d'indépendance et abolit le sultanat en 1922."}
+];
+const CIRC=2*Math.PI*36;
+let cur=0,score=0,streak=0,timer=null,timeLeft=20,answered=false,selected=-1;
+
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
+
+function startQuiz(){cur=0;score=0;streak=0;show('s-quiz');loadQ();}
+
+function loadQ(){
+  answered=false;selected=-1;
+  const q=QS[cur];
+  document.getElementById('qt-num').textContent=(cur+1)+' / '+QS.length;
+  document.getElementById('qt-score').textContent=score+' / '+QS.length;
+  document.getElementById('prog').style.width=(cur/QS.length*100)+'%';
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('tip').className='tip';
+  document.getElementById('next-btn').className='next-btn';
+  document.getElementById('valider-btn').className='valider-btn';
+  document.getElementById('streak').textContent='';
+  const letters=['A','B','C','D'];
+  const opts=document.getElementById('opts');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='opt';
+    d.id='opt-'+i;
+    d.innerHTML='<div class="opt-letter">'+letters[i]+'</div><div class="opt-text">'+o+'</div>';
+    d.onclick=function(){selectOpt(i);};
+    opts.appendChild(d);
+  });
+  startTimer();
+}
+
+function selectOpt(idx){
+  if(answered)return;
+  selected=idx;
+  // Reset toutes les options
+  document.querySelectorAll('.opt').forEach(o=>o.className='opt');
+  // Marquer la sélectionnée
+  document.getElementById('opt-'+idx).className='opt selected';
+  // Afficher le bouton valider
+  document.getElementById('valider-btn').className='valider-btn show';
+}
+
+function validerReponse(){
+  if(answered||selected===-1)return;
+  answered=true;
+  clearInterval(timer);
+  const q=QS[cur];
+  document.querySelectorAll('.opt').forEach(o=>{o.className=o.className.replace('selected','');o.classList.add('disabled');o.onclick=null;});
+  const tip=document.getElementById('tip');
+  document.getElementById('valider-btn').className='valider-btn';
+  if(selected===q.ans){
+    document.getElementById('opt-'+selected).className='opt correct disabled';
+    score++;streak++;
+    document.getElementById('qt-score').textContent=score+' / '+QS.length;
+    document.getElementById('streak').textContent=streak>=3?'🔥 Série de '+streak+' !':streak>=2?'⚡ '+streak+' bonnes réponses !':'';
+    tip.innerHTML='✅ <strong>Bonne réponse !</strong> '+q.tip;
+    tip.style.borderLeftColor='#4CAF50';tip.style.color='#90EE90';
+  }else{
+    document.getElementById('opt-'+selected).className='opt wrong disabled';
+    document.getElementById('opt-'+q.ans).className='opt reveal disabled';
+    streak=0;
+    tip.innerHTML='❌ <strong>Mauvaise réponse.</strong> '+q.tip;
+    tip.style.borderLeftColor='#E53935';tip.style.color='#FFB3B3';
+  }
+  tip.className='tip show';
+  document.getElementById('next-btn').className='next-btn show';
+}
+
+function startTimer(){
+  clearInterval(timer);
+  timeLeft=20;
+  const arc=document.getElementById('t-arc');
+  const num=document.getElementById('t-num');
+  arc.style.stroke='#E8A020';
+  arc.style.strokeDashoffset='0';
+  num.className='t-num';
+  num.textContent='20';
+  timer=setInterval(()=>{
+    timeLeft--;
+    num.textContent=timeLeft;
+    arc.style.strokeDashoffset=CIRC*(1-timeLeft/20);
+    if(timeLeft<=5){arc.style.stroke='#FF6B6B';num.className='t-num urgent';}
+    if(timeLeft<=0){clearInterval(timer);if(!answered)timeOut();}
+  },1000);
+}
+
+function timeOut(){
+  answered=true;
+  const q=QS[cur];
+  document.querySelectorAll('.opt').forEach(o=>{o.classList.add('disabled');o.onclick=null;});
+  document.getElementById('opt-'+q.ans).className='opt reveal disabled';
+  document.getElementById('valider-btn').className='valider-btn';
+  streak=0;
+  const tip=document.getElementById('tip');
+  tip.innerHTML='⏰ <strong>Temps écoulé !</strong> '+q.tip;
+  tip.style.borderLeftColor='#E8A020';tip.style.color='#C4909F';
+  tip.className='tip show';
+  document.getElementById('next-btn').className='next-btn show';
+}
+
+function nextQ(){cur++;if(cur<QS.length){loadQ();}else{showResult();}}
+
+function showResult(){
+  show('s-result');
+  let medal,title,sub;
+  if(score===8){medal='🏆';title='Score parfait !';sub='Vous maîtrisez parfaitement l\'Empire ottoman !';}
+  else if(score>=6){medal='🥇';title='Excellent !';sub='Très bonne maîtrise du cours.';}
+  else if(score>=4){medal='🥈';title='Bien !';sub='Quelques points à revoir.';}
+  else{medal='📚';title='À revoir !';sub='Relire le cours et recommencer.';}
+  document.getElementById('r-medal').textContent=medal;
+  document.getElementById('r-score').textContent=score+' / '+QS.length;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+}
+
+function restart(){cur=0;score=0;streak=0;selected=-1;show('s-splash');}
+</script>
+</body>
+</html>
 
   /* ── SPLASH ── */
   .splash { background: #6B1230; border-radius: 16px; padding: 4rem 2rem; text-align: center; }
