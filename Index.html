@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quiz – Empire ottoman | Le Lycée Visio</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #1a0a12; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  #app { width: 100%; max-width: 860px; }
+
+  .screen { display: none; }
+  .screen.active { display: block; }
+
+  /* ── SPLASH ── */
+  .splash { background: #6B1230; border-radius: 16px; padding: 4rem 2rem; text-align: center; }
+  .splash-eyebrow { font-size: 12px; color: #E8A020; letter-spacing: 4px; text-transform: uppercase; margin-bottom: 0.75rem; }
+  .splash-h { font-size: 42px; font-weight: 700; color: #fff; line-height: 1.2; margin-bottom: 0.5rem; }
+  .splash-sub { font-size: 16px; color: #C4909F; margin-bottom: 2.5rem; }
+  .splash-stats { display: flex; justify-content: center; gap: 3rem; margin-bottom: 3rem; }
+  .stat span { display: block; font-size: 36px; font-weight: 700; color: #E8A020; }
+  .stat small { font-size: 13px; color: #C4909F; }
+  .start-btn { background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1.1rem 4rem; font-size: 18px; font-weight: 700; cursor: pointer; transition: transform 0.1s; }
+  .start-btn:hover { transform: scale(1.04); }
+  .logo-tag { margin-top: 2.5rem; font-size: 12px; color: #7A3050; letter-spacing: 2px; text-transform: uppercase; }
+
+  /* ── QUIZ ── */
+  .quiz-top { background: #6B1230; border-radius: 16px; padding: 1.25rem 1.75rem; display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .qt-left { display: flex; flex-direction: column; }
+  .qt-eyebrow { font-size: 11px; color: #C4909F; letter-spacing: 3px; text-transform: uppercase; }
+  .qt-num { font-size: 24px; font-weight: 700; color: #fff; }
+  .qt-score { background: #E8A020; color: #4A0D21; border-radius: 30px; padding: 8px 22px; font-size: 15px; font-weight: 700; }
+
+  /* Timer */
+  .timer-wrap { position: relative; width: 90px; height: 90px; }
+  .timer-svg { transform: rotate(-90deg); }
+  .t-bg { fill: none; stroke: #4A0D21; stroke-width: 7; }
+  .t-arc { fill: none; stroke: #E8A020; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 226; stroke-dashoffset: 0; transition: stroke-dashoffset 1s linear, stroke 0.3s; }
+  .t-num { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 28px; font-weight: 700; color: #fff; }
+  .t-num.urgent { color: #FF6B6B; }
+
+  /* Progress bar */
+  .prog-wrap { background: #4A0D21; border-radius: 8px; height: 6px; margin-bottom: 1rem; overflow: hidden; }
+  .prog-fill { height: 6px; background: #E8A020; border-radius: 8px; transition: width 0.5s ease; }
+
+  /* Question */
+  .q-card { background: #fff; border-radius: 16px; padding: 2.5rem 2rem; margin-bottom: 1rem; text-align: center; min-height: 120px; display: flex; align-items: center; justify-content: center; }
+  .q-text { font-size: 22px; font-weight: 600; color: #1a0a12; line-height: 1.5; }
+
+  /* Options */
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1rem; }
+  .opt { border-radius: 12px; padding: 1.1rem 1.25rem; display: flex; align-items: center; gap: 14px; cursor: pointer; border: 2px solid transparent; background: #2D0F1E; transition: all 0.15s; }
+  .opt:hover { background: #3D1528; border-color: #E8A020; }
+  .opt-letter { width: 42px; height: 42px; border-radius: 50%; background: #6B1230; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 17px; font-weight: 700; flex-shrink: 0; }
+  .opt-text { font-size: 16px; color: #fff; line-height: 1.4; }
+  .opt.correct { background: #1A4A1A; border-color: #4CAF50; }
+  .opt.correct .opt-letter { background: #2E7D32; }
+  .opt.wrong { background: #4A1A1A; border-color: #E53935; }
+  .opt.wrong .opt-letter { background: #C62828; }
+
+  /* Explication */
+  .tip { background: #2D0F1E; border-left: 4px solid #E8A020; border-radius: 0 12px 12px 0; padding: 1rem 1.25rem; font-size: 14px; color: #C4909F; margin-bottom: 1rem; display: none; line-height: 1.6; }
+  .tip strong { color: #E8A020; }
+  .tip.show { display: block; }
+
+  /* Boutons */
+  .btn-row { display: flex; gap: 10px; }
+  .reveal-btn { flex: 1; background: #6B1230; color: #fff; border: none; border-radius: 12px; padding: 1rem; font-size: 16px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+  .reveal-btn:hover { background: #8B1A40; }
+  .reveal-btn.hidden { display: none; }
+  .next-btn { flex: 1; background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1rem; font-size: 16px; font-weight: 700; cursor: pointer; display: none; transition: transform 0.1s; }
+  .next-btn:hover { transform: scale(1.02); }
+  .next-btn.show { display: block; }
+
+  /* Streak */
+  .streak { text-align: center; font-size: 14px; color: #E8A020; font-weight: 600; min-height: 22px; margin-bottom: 0.5rem; }
+
+  /* ── RÉSULTAT ── */
+  .result { background: #6B1230; border-radius: 16px; padding: 3rem 2rem; text-align: center; }
+  .r-medal { font-size: 72px; margin-bottom: 0.5rem; }
+  .r-score { font-size: 56px; font-weight: 700; color: #E8A020; }
+  .r-total { font-size: 22px; color: #C4909F; margin-bottom: 0.25rem; }
+  .r-title { font-size: 24px; font-weight: 700; color: #fff; margin-bottom: 0.5rem; }
+  .r-sub { font-size: 15px; color: #C4909F; margin-bottom: 2rem; }
+  .r-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 2rem; }
+  .r-cell { background: #4A0D21; border-radius: 10px; padding: 0.75rem 0.5rem; }
+  .r-cell-label { font-size: 11px; color: #C4909F; margin-bottom: 4px; }
+  .r-cell-val { font-size: 20px; font-weight: 700; color: #E8A020; }
+  .replay-btn { background: #E8A020; color: #4A0D21; border: none; border-radius: 12px; padding: 1.1rem 3rem; font-size: 17px; font-weight: 700; cursor: pointer; }
+  .replay-btn:hover { transform: scale(1.03); }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- SPLASH -->
+  <div class="screen active" id="s-splash">
+    <div class="splash">
+      <div class="splash-eyebrow">HGGSP • Thème 2 — Le Lycée Visio</div>
+      <div class="splash-h">Quiz<br>Empire ottoman</div>
+      <div class="splash-sub">Essor et déclin d'une puissance mondiale</div>
+      <div class="splash-stats">
+        <div class="stat"><span>8</span><small>questions</small></div>
+        <div class="stat"><span>20s</span><small>par question</small></div>
+        <div class="stat"><span>4</span><small>réponses</small></div>
+      </div>
+      <button class="start-btn" onclick="startQuiz()">Lancer le quiz ▶</button>
+      <div class="logo-tag">Le Lycée Visio • L'excellence scolaire de chez vous</div>
+    </div>
+  </div>
+
+  <!-- QUIZ -->
+  <div class="screen" id="s-quiz">
+    <div class="quiz-top">
+      <div class="qt-left">
+        <span class="qt-eyebrow">Question</span>
+        <span class="qt-num" id="qt-num">1 / 8</span>
+      </div>
+      <div class="timer-wrap">
+        <svg class="timer-svg" width="90" height="90" viewBox="0 0 90 90">
+          <circle class="t-bg" cx="45" cy="45" r="36"/>
+          <circle class="t-arc" id="t-arc" cx="45" cy="45" r="36"/>
+        </svg>
+        <div class="t-num" id="t-num">20</div>
+      </div>
+      <div class="qt-score" id="qt-score">0 / 8</div>
+    </div>
+
+    <div class="prog-wrap"><div class="prog-fill" id="prog" style="width:0%"></div></div>
+    <div class="streak" id="streak"></div>
+
+    <div class="q-card"><div class="q-text" id="q-text"></div></div>
+
+    <div class="opts" id="opts"></div>
+
+    <div class="tip" id="tip"></div>
+
+    <div class="btn-row">
+      <button class="reveal-btn" id="reveal-btn" onclick="revealAnswer()">Révéler la réponse</button>
+      <button class="next-btn" id="next-btn" onclick="nextQ()">Question suivante →</button>
+    </div>
+  </div>
+
+  <!-- RÉSULTAT -->
+  <div class="screen" id="s-result">
+    <div class="result">
+      <div class="r-medal" id="r-medal"></div>
+      <div class="r-score" id="r-score"></div>
+      <div class="r-total">questions correctes</div>
+      <div class="r-title" id="r-title"></div>
+      <div class="r-sub" id="r-sub"></div>
+      <div class="r-grid" id="r-grid"></div>
+      <button class="replay-btn" onclick="restart()">↺ Recommencer</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const QS = [
+  { q:"Qui est à l'origine de la dynasty ottomane ?", opts:["Orhan","Osman Ier","Mehmet II","Soliman le Magnifique"], ans:1, tip:"<strong>Osman Ier</strong> est le fondateur éponyme de la dynasty ottomane au tournant du XIVe siècle." },
+  { q:"Quel événement de 1453 marque la fin de l'Empire romain d'Orient ?", opts:["La bataille de Lépante","La chute de Constantinople","Le traité de Carlowitz","Le siège de Vienne"], ans:1, tip:"<strong>Mehmet II</strong> conquiert Constantinople en 1453 — transformée en Istanbul, nouvelle capitale ottomane." },
+  { q:"Sous quel sultan l'Empire atteint-il son apogée au XVIe siècle ?", opts:["Abdul Hamid II","Soliman le Magnifique","Selim Ier","Osman II"], ans:1, tip:"<strong>Soliman le Magnifique</strong> règne 46 ans (1520–1566) : conquêtes, réformes juridiques, rayonnement culturel." },
+  { q:"Qui étaient les janissaires dans l'organisation militaire ottomane ?", opts:["Des mercenaires européens","La marine impériale","Un corps d'élite de chrétiens convertis","Une cavalerie de nomades"], ans:2, tip:"Recrutés par le système du <strong>devchirmé</strong>, les janissaires étaient la garde d'élite fidèle du souverain." },
+  { q:"Quelle défaite navale de 1571 brise le mythe de l'invincibilité ottomane en Méditerranée ?", opts:["La bataille de Preveza","La bataille de Lépante","Le siège de Malte","La bataille de Navarin"], ans:1, tip:"<strong>La bataille de Lépante</strong> (1571) : une coalition chrétienne inflige une défaite symbolique majeure à la flotte ottomane." },
+  { q:"Quel traité de 1699 marque le début du recul territorial ottoman en Europe ?", opts:["Le traité de Versailles","Le traité de Carlowitz","La paix d'Amiens","Le traité de Lausanne"], ans:1, tip:"Le <strong>traité de Carlowitz</strong> force l'Empire à céder de vastes territoires aux Habsbourg après l'échec de Vienne." },
+  { q:"Comment s'appelle la période de grandes réformes lancée en 1839 ?", opts:["L'ère des Tanzimat","La Révolution des Jeunes-Turcs","La Renaissance ottomane","Le Printemps des peuples"], ans:0, tip:"Les <strong>Tanzimat</strong> (1839) visaient à moderniser l'armée, la justice et la fiscalité sur le modèle européen." },
+  { q:"Qui fonde la Turquie moderne après la disparition de l'Empire en 1922 ?", opts:["Mustafa Kemal (Atatürk)","Osman III","Ismet Inönü","Enver Pacha"], ans:0, tip:"<strong>Mustafa Kemal Atatürk</strong>, héros des Dardanelles, mène la guerre d'indépendance et abolit le sultanat en 1922." }
+];
+
+const CIRC = 2 * Math.PI * 36;
+let cur=0, score=0, streak=0, timer=null, timeLeft=20;
+
+function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+function startQuiz(){ cur=0; score=0; streak=0; show('s-quiz'); loadQ(); }
+
+function loadQ(){
+  const q=QS[cur];
+  document.getElementById('qt-num').textContent=(cur+1)+' / '+QS.length;
+  document.getElementById('qt-score').textContent=score+' / '+QS.length;
+  document.getElementById('prog').style.width=(cur/QS.length*100)+'%';
+  document.getElementById('q-text').textContent=q.q;
+  document.getElementById('tip').className='tip';
+  document.getElementById('reveal-btn').className='reveal-btn';
+  document.getElementById('next-btn').className='next-btn';
+  document.getElementById('streak').textContent='';
+
+  const letters=['A','B','C','D'];
+  const opts=document.getElementById('opts');
+  opts.innerHTML='';
+  q.opts.forEach((o,i)=>{
+    const d=document.createElement('div');
+    d.className='opt'; d.id='opt-'+i;
+    d.innerHTML='<div class="opt-letter">'+letters[i]+'</div><div class="opt-text">'+o+'</div>';
+    opts.appendChild(d);
+  });
+  startTimer();
+}
+
+function startTimer(){
+  clearInterval(timer);
+  timeLeft=20;
+  const arc=document.getElementById('t-arc');
+  const num=document.getElementById('t-num');
+  arc.style.stroke='#E8A020';
+  arc.style.strokeDashoffset='0';
+  num.className='t-num';
+  num.textContent='20';
+  timer=setInterval(()=>{
+    timeLeft--;
+    num.textContent=timeLeft;
+    arc.style.strokeDashoffset=CIRC*(1-timeLeft/20);
+    if(timeLeft<=5){ arc.style.stroke='#FF6B6B'; num.className='t-num urgent'; }
+    if(timeLeft<=0){ clearInterval(timer); }
+  },1000);
+}
+
+function revealAnswer(){
+  clearInterval(timer);
+  const q=QS[cur];
+  document.getElementById('opt-'+q.ans).className='opt correct';
+  const tip=document.getElementById('tip');
+  tip.innerHTML='<strong>Explication :</strong> '+q.tip;
+  tip.className='tip show';
+  document.getElementById('reveal-btn').className='reveal-btn hidden';
+  document.getElementById('next-btn').className='next-btn show';
+}
+
+function nextQ(){
+  cur++;
+  if(cur<QS.length){ loadQ(); }
+  else { showResult(); }
+}
+
+function showResult(){
+  show('s-result');
+  document.getElementById('prog').style.width='100%';
+  const pct=Math.round(score/QS.length*100);
+  let medal,title,sub;
+  if(score===8){medal='🏆';title='Score parfait !';sub='Vous maîtrisez parfaitement l\'Empire ottoman !';}
+  else if(score>=6){medal='🥇';title='Excellent !';sub='Très bonne maîtrise du cours.';}
+  else if(score>=4){medal='🥈';title='Bien !';sub='Quelques points à revoir ensemble.';}
+  else{medal='📚';title='À revoir !';sub='Relire le cours et recommencer.';}
+  document.getElementById('r-medal').textContent=medal;
+  document.getElementById('r-score').textContent=score+' / '+QS.length;
+  document.getElementById('r-title').textContent=title;
+  document.getElementById('r-sub').textContent=sub;
+
+  const topics=['Origines','Constantinople','Apogée','Janissaires','Lépante','Carlowitz','Tanzimat','Atatürk'];
+  const grid=document.getElementById('r-grid');
+  grid.innerHTML='';
+  topics.forEach((t,i)=>{
+    const c=document.createElement('div');
+    c.className='r-cell';
+    c.innerHTML='<div class="r-cell-label">'+t+'</div><div class="r-cell-val">✓</div>';
+    grid.appendChild(c);
+  });
+}
+
+function restart(){ cur=0; score=0; streak=0; show('s-splash'); }
+</script>
+</body>
+</html>
